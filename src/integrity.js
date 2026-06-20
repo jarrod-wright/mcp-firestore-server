@@ -18,10 +18,10 @@
  *   batch_get         — "Fetch multiple documents by ID..."
  *   count_documents   — "Count documents in a collection..."
  *   create_document   — "Create a new document..."
- *   get_document      — "Get a specific document by ID..."
+ *   get_document      — "Get a specific document by ID... _meta heavy-field note (BLD-501)"
  *   list_collections  — "List collections. Lists top-level..."
- *   query_collection  — "Query a Firestore collection..."
- *   query_with_where  — "Query a collection with where conditions..."
+ *   query_collection  — "Query a Firestore collection... default projection + _meta (BLD-501)"
+ *   query_with_where  — "Query a collection with where conditions... default projection + _meta (BLD-501)"
  *   update_document   — "Update an existing document..."
  *
  * NOTE: delete_document was REMOVED in this fork (D2 Director decision).
@@ -36,10 +36,14 @@ import { createHash } from 'crypto';
  * Known-good SHA256 of sorted tool (name + description) concatenation.
  * Derived from source at this commit. Replaces on any tool description change.
  *
- * Commit: SS-B 2026-04-23 (Phase 2 GPG signing will embed exact commit SHA)
+ * Commit: BLD-501 2026-06-20 — FM-3 structural enforcement reseal.
+ *   query_collection / query_with_where / get_document descriptions updated to
+ *   document default metadata-only projection + byte-cap + _meta annotation.
+ *   Prior value (Ph9 host, never committed): dec51598...c43d2b.
+ *   Repo-baseline value (pre-Ph9): a49a5d40...e79619.
  */
 export const KNOWN_GOOD_TOOL_HASH =
-  'a49a5d404a0fd8b781b8fe01ed391d5dbc7d36f97acb093a73792d2895e79619';
+  '84ba5a1954fe89ac85c3c637532b9fc73954a3f967205a8a3e6228d2cbaf1352';
 
 /**
  * Compute SHA256 of sorted tool (name + description) concatenation.
