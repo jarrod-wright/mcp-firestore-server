@@ -137,19 +137,22 @@ function buildMeta(opts) {
  * @returns {{ trimmedDocs: Object[], capped: boolean }}
  */
 function enforceByteLimit(docs, envelope) {
-  const envelopeStr = JSON.stringify(envelope);
-  const overhead = Buffer.byteLength(envelopeStr, "utf8") + 50;
+  // The emitted response adds _meta, lastDocId, and (query_with_where) a query
+  // string on top of { ...envelope, documents }. MAX_RESPONSE_BYTES (40000) sits
+  // 10000 below the Hermes tool_output.max_bytes hard cap (50000); that 10 KB
+  // margin absorbs those additions (all < 1 KB combined).
   let kept = docs;
 
-  while (kept.length > 0) {
+  while (kept.length > 1) {
     const payload = JSON.stringify({ ...envelope, documents: kept });
-    if (Buffer.byteLength(payload, "utf8") <= MAX_RESPONSE_BYTES) {
-      return { trimmedDocs: kept, capped: kept.length < docs.length };
-    }
+    if (Buffer.byteLength(payload, "utf8") <= MAX_RESPONSE_BYTES) break;
     kept = kept.slice(0, -1);
   }
 
-  return { trimmedDocs: [], capped: docs.length > 0 };
+  // Always return at least one document when any exist, so the pagination cursor
+  // advances and the caller is never dead-ended. A lone doc over the soft cap
+  // still fits under the 50 KB hard cap via the margin.
+  return { trimmedDocs: kept, capped: kept.length < docs.length };
 }
 
 // ---------------------------------------------------------------------------
