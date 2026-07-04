@@ -17,8 +17,14 @@
  * code level and cannot be overridden by any environment variable.
  */
 
-/** Collections permanently excluded from all write operations — Invariant 5 */
-const HARD_EXCLUDED_FROM_WRITES = ['knowledge', 'okg'];
+/** Collections permanently excluded from all GENERIC write operations — Invariant 5.
+ *  BLD-560 Epic B: 'crm_overrides' and 'crm_records' are added here so the generic
+ *  create_document / update_document tools can NEVER write them regardless of
+ *  COLLECTION_WRITE_ALLOWLIST. The ONLY sanctioned write path to these collections is
+ *  the enforced override tools (ENFORCED_WRITE_TOOLS), which hardwire the collection
+ *  internally. This makes AC4 (reachable only via the enforced projection) a code
+ *  invariant, not a configuration or prompt guarantee. */
+const HARD_EXCLUDED_FROM_WRITES = ['knowledge', 'okg', 'crm_overrides', 'crm_records'];
 
 /**
  * Tools that perform write operations.
@@ -30,6 +36,21 @@ const HARD_EXCLUDED_FROM_WRITES = ['knowledge', 'okg'];
 const WRITE_TOOLS = new Set([
   'create_document',
   'update_document',
+]);
+
+/**
+ * BLD-560 Epic B — enforced CRM override write tools (positive registry).
+ *
+ * These tools write crm_overrides via a hardwired, internally-enforced collection
+ * binding (opaque-id discipline, tenant-scoped). They are registered here so
+ * enforceAllowlist RECOGNISES them instead of silently falling through to PERMITTED
+ * (the unrecognised-tool default). An enforced tool must NEVER carry a caller-supplied
+ * 'collection'/'collectionId' argument — doing so is a smuggling attempt and is BLOCKED.
+ */
+export const ENFORCED_WRITE_TOOLS = new Set([
+  'record_override',
+  'confirm_override',
+  'retract_override',
 ]);
 
 /**
@@ -161,6 +182,16 @@ export function validateAllowlistConfig() {
 export function enforceAllowlist(toolName, args) {
   const BLOCKED = { permitted: false, reason: 'Collection not permitted' };
   const ALLOWED = { permitted: true };
+
+  // BLD-560 Epic B — enforced override tools: recognised, never fall-through-permitted.
+  // They hardwire their collection internally, so a caller-supplied collection arg is a
+  // smuggling attempt and is BLOCKED. With no collection arg they are permitted here and
+  // the tool's own internal enforcement governs the write (crm_overrides, opaque-id).
+  if (ENFORCED_WRITE_TOOLS.has(toolName)) {
+    const smuggled = args?.collection ?? args?.collectionId;
+    if (smuggled !== undefined && smuggled !== null && smuggled !== '') return BLOCKED;
+    return ALLOWED;
+  }
 
   if (WRITE_TOOLS.has(toolName)) {
     const rawCollection = args?.collection ?? args?.collectionId ?? '';
