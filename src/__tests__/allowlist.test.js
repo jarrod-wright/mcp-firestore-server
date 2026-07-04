@@ -49,6 +49,9 @@ import * as createDocument from '../tools/create-document.js';
 import * as updateDocument from '../tools/update-document.js';
 import * as countDocuments from '../tools/count-documents.js';
 import * as batchGet from '../tools/batch-get.js';
+import * as recordOverride from '../tools/record-override.js';
+import * as confirmOverride from '../tools/confirm-override.js';
+import * as retractOverride from '../tools/retract-override.js';
 
 /**
  * Helper: set env vars for the duration of fn(), then restore.
@@ -399,6 +402,9 @@ describe('tool description integrity (UT9)', () => {
       updateDocument.definition,
       countDocuments.definition,
       batchGet.definition,
+      recordOverride.definition,
+      confirmOverride.definition,
+      retractOverride.definition,
     ];
 
     const computed = computeToolDescriptionHash(rawDefs);
