@@ -12,9 +12,11 @@ import { getToolDefinitions, getHandler } from "./tools/index.js";
 import { buildResponse, buildErrorResponse } from "./helpers/response.js";
 import { enforceAllowlist, validateAllowlistConfig } from "./allowlist.js";
 import { verifyToolDescriptionHash } from "./integrity.js";
+import { assertTenantBinding } from "./tenant-binding.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf8"));
+
 
 /** Connection test timeout in milliseconds. */
 const CONNECTION_TEST_TIMEOUT_MS = 10_000;
@@ -42,7 +44,10 @@ export async function startServer() {
     console.error("[ALLOWLIST] Configuration validated");
 
     // Initialize Firebase with dual-endpoint support
-    const { defaultTarget, availableTargets } = initFirebase();
+    const { projectId, defaultTarget, availableTargets } = initFirebase();
+
+    // BLD-560 Epic B - B4: fail-closed tenant-binding gate before any tool wiring.
+    assertTenantBinding(projectId);
 
     // Test connections in parallel with timeout
     await Promise.allSettled(
