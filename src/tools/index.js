@@ -5,13 +5,17 @@ import * as listCollections from "./list-collections.js";
 import * as createDocument from "./create-document.js";
 import * as updateDocument from "./update-document.js";
 // NOTE: deleteDocument intentionally omitted.
-// D2 Director decision — SS-B 2026-04-23:
+// D2 Director decision -- SS-B 2026-04-23:
 // Deletion is Night Manager scope only. Hermes flags items for deletion by
 // setting a status field in hermes-staging; the Night Manager executes the
 // actual Firestore delete. This structural removal eliminates the entire
 // delete attack surface from the Hermes agent layer.
 import * as countDocuments from "./count-documents.js";
 import * as batchGet from "./batch-get.js";
+// BLD-560 Epic B -- enforced crm_overrides write tools (collection hardwired internally).
+import * as recordOverride from "./record-override.js";
+import * as confirmOverride from "./confirm-override.js";
+import * as retractOverride from "./retract-override.js";
 
 const tools = [
   queryCollection,
@@ -20,9 +24,14 @@ const tools = [
   listCollections,
   createDocument,
   updateDocument,
-  // delete_document: removed — see note above
+  // delete_document: removed -- see note above
   countDocuments,
   batchGet,
+  // BLD-560 Epic B -- enforced crm_overrides writers (the ONLY sanctioned write path to
+  // crm_overrides; generic create/update are hard-excluded by allowlist Invariant 5).
+  recordOverride,
+  confirmOverride,
+  retractOverride,
 ];
 
 /**
