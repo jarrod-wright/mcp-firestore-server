@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node --test src/__tests__/allowlist.test.js"
+    "test": "node --test src/__tests__/*.test.js"
   },
   "keywords": [
     "mcp",

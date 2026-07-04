@@ -1,0 +1,245 @@
+{
+  "recorded_at": "2026-07-01T16:00:01Z",
+  "salt": "test-mint-salt-epicb",
+  "stated_at": "2026-07-01T16:00:00Z",
+  "vectors": [
+    {
+      "args": {
+        "entity_id": "entity-A",
+        "field_path": "claim.value",
+        "override_type": "claim.correct",
+        "provenance": {
+          "directed_by": "coach",
+          "session_ref": "sess-vec"
+        },
+        "recorded_at": "2026-07-01T16:00:01Z",
+        "stated_at": "2026-07-01T16:00:00Z",
+        "value": "corrected"
+      },
+      "expect": {
+        "override_id": "entity-A:claim.correct:claim.value",
+        "schema_fields": [
+          "authority",
+          "confidence_effect",
+          "entity_id",
+          "event_id",
+          "evidence_grade",
+          "field_path",
+          "override_id",
+          "override_type",
+          "provenance",
+          "recorded_at",
+          "source",
+          "stated_at",
+          "status",
+          "supersedes",
+          "value"
+        ],
+        "status": "active"
+      },
+      "op": "record_override",
+      "vector_id": "v01"
+    },
+    {
+      "args": {
+        "entity_id": "entity-A",
+        "field_path": "record.state",
+        "override_type": "record.suppress",
+        "provenance": {
+          "directed_by": "coach",
+          "session_ref": "sess-vec"
+        },
+        "recorded_at": "2026-07-01T16:00:01Z",
+        "stated_at": "2026-07-01T16:00:00Z",
+        "value": "suppress"
+      },
+      "expect": {
+        "override_id": "entity-A:record.suppress:record.state",
+        "status": "pending"
+      },
+      "op": "record_override",
+      "vector_id": "v02"
+    },
+    {
+      "args": {
+        "override_id": "entity-A:record.suppress:record.state",
+        "seed": "v02"
+      },
+      "expect": {
+        "has_active": true,
+        "status": "active"
+      },
+      "op": "confirm",
+      "vector_id": "v03"
+    },
+    {
+      "args": {
+        "override_id": "entity-A:record.suppress:record.state",
+        "seed": "v02"
+      },
+      "expect": {
+        "no_active": true
+      },
+      "op": "retract",
+      "vector_id": "v04"
+    },
+    {
+      "args": {
+        "canonical_entity_id": "entity-A",
+        "merged_entity_ids": [
+          "entity-B"
+        ],
+        "provenance": {
+          "directed_by": "coach",
+          "session_ref": "sess-vec"
+        },
+        "recorded_at": "2026-07-01T16:00:01Z",
+        "stated_at": "2026-07-01T16:00:00Z"
+      },
+      "expect": {
+        "override_id": "identity.merge:entity-A",
+        "schema_fields": [
+          "authority",
+          "confidence_effect",
+          "entity_id",
+          "event_id",
+          "evidence_grade",
+          "field_path",
+          "override_id",
+          "override_type",
+          "provenance",
+          "recorded_at",
+          "source",
+          "stated_at",
+          "status",
+          "supersedes",
+          "value"
+        ],
+        "status": "pending",
+        "value": {
+          "canonical_entity_id": "entity-A",
+          "merged_entity_ids": [
+            "entity-B"
+          ]
+        }
+      },
+      "op": "record_identity_merge",
+      "vector_id": "v05"
+    },
+    {
+      "args": {
+        "partition_rule": "split-by-email-domain",
+        "provenance": {
+          "directed_by": "coach",
+          "session_ref": "sess-vec"
+        },
+        "recorded_at": "2026-07-01T16:00:01Z",
+        "source_entity_id": "entity-A",
+        "stated_at": "2026-07-01T16:00:00Z"
+      },
+      "expect": {
+        "minted_entity_id": "ent-9557971de41c2ac7155510b7",
+        "override_id": "identity.split:entity-A",
+        "status": "pending"
+      },
+      "op": "record_identity_split",
+      "vector_id": "v06"
+    },
+    {
+      "args": {
+        "agent_supplied_new_id": "attacker-id",
+        "partition_rule": "split-by-email-domain",
+        "provenance": {
+          "directed_by": "coach",
+          "session_ref": "sess-vec"
+        },
+        "recorded_at": "2026-07-01T16:00:01Z",
+        "source_entity_id": "entity-A",
+        "stated_at": "2026-07-01T16:00:00Z"
+      },
+      "expect": {
+        "error_class": "WriteToolError",
+        "reject_before_mint": true
+      },
+      "op": "record_identity_split",
+      "vector_id": "v07"
+    },
+    {
+      "args": {
+        "salt": "test-mint-salt-epicb"
+      },
+      "expect": {
+        "diff_inputs_differ": true,
+        "minted_AB": "ent-9557971de41c2ac7155510b7",
+        "same_inputs_equal": true
+      },
+      "op": "mint_entity_id",
+      "vector_id": "v08"
+    },
+    {
+      "args": {
+        "entity_id": "entity-A",
+        "field_path": "identity.identity_confidence",
+        "override_type": "confidence.pin",
+        "provenance": {
+          "directed_by": "coach",
+          "session_ref": "sess-vec"
+        },
+        "recorded_at": "2026-07-01T16:00:01Z",
+        "stated_at": "2026-07-01T16:00:00Z",
+        "value": "human-verified"
+      },
+      "expect": {
+        "confidence_effect": "human-verified",
+        "override_id": "entity-A:confidence.pin:identity.identity_confidence",
+        "status": "active"
+      },
+      "op": "record_override",
+      "vector_id": "v09"
+    },
+    {
+      "args": {
+        "override_id": "entity-A:claim.correct:claim.value"
+      },
+      "expect": {
+        "active_value": [
+          "v2"
+        ],
+        "superseded_count": 1
+      },
+      "op": "supersede",
+      "vector_id": "v10"
+    },
+    {
+      "args": {
+        "name_token": "Zzytular"
+      },
+      "expect": {
+        "name_not_in_minted": true,
+        "name_not_in_override_id": true
+      },
+      "op": "opaque_id_negative",
+      "vector_id": "v11"
+    },
+    {
+      "args": {
+        "agent_supplied_override_id": "attacker-id",
+        "entity_id": "entity-A",
+        "field_path": "claim.value",
+        "override_type": "claim.correct",
+        "provenance": {
+          "directed_by": "coach",
+          "session_ref": "sess-vec"
+        },
+        "recorded_at": "2026-07-01T16:00:01Z",
+        "stated_at": "2026-07-01T16:00:00Z",
+        "value": "corrected"
+      },
+      "expect": {
+        "error_class": "WriteToolError"
+      },
+      "op": "record_override",
+      "vector_id": "v12"
+    }
+  ]
+}
