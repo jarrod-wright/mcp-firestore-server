@@ -179,3 +179,49 @@ Each failure is the intended-reason failure (RT-GATE-1/MEP-3): the spy's `calls.
 Committed/pushed as `c4bd0cf` (see `result-EPICC-01-01-firestore-store-red.md`).
 
 RESULT: PASS
+
+## T2 — GREEN: implement Firestore-backed CrmOverridesStore (S2)
+
+**File changed:** `src/tools/crm-overrides-store.js` rewritten per S2 (`runTransaction`,
+`eventsFor`, `append`, `_flush`; `ENFORCED_COLLECTION` + constructor binding +
+`makeCrmOverridesStore` retained verbatim, INV-A).
+
+**Command run:**
+```
+node --test src/__tests__/firestore-store.test.js
+```
+
+**Output (verbatim, GREEN):**
+```
+✔ (a) db.collection is called with exactly crm_overrides and no other collection (2.292556ms)
+✔ (b) eventsFor issues txn.get on a where(override_id,==,...) query (1.038751ms)
+✔ (c) append flushes as txn.set at docId `${override_id}#${seq}` (1.506066ms)
+✔ (d) a status mutation flushes as txn.update(ref,{status}) -- status key only (0.83467ms)
+✔ (e) persist-across-restart: a second store instance sees the first instance's events (0.537775ms)
+✔ (f) INV-C: txn.delete is never invoked; update payloads never carry a content field (0.586867ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 101.55369
+```
+
+**Full-suite regression check — `node --test src/__tests__/*.test.js` (summary lines):**
+```
+ℹ tests 80
+ℹ suites 7
+ℹ pass 80
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 622.82959
+```
+80 = 74 baseline (untouched) + 6 new firestore-store tests. No count regression.
+
+Committed/pushed as `44cfd21` (see `result-EPICC-01-02-firestore-store-green.md`).
+
+RESULT: PASS
