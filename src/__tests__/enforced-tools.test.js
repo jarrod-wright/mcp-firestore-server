@@ -55,7 +55,7 @@ test("identity.split via handler mints the v06 anchor byte-identically", async (
     { override_type: "identity.split", source_entity_id: "entity-A",
       partition_rule: "split-by-email-domain", ...TS }, db, factory);
   assert.equal(r.status, "pending");
-  const ev = shared.eventsFor("identity.split:entity-A")[0];
+  const [ev] = await shared.eventsFor("identity.split:entity-A");
   assert.equal(ev.value.minted_entity_id, "ent-9557971de41c2ac7155510b7");
 });
 
