@@ -257,3 +257,148 @@ node --test src/__tests__/*.test.js
 Committed/pushed as `269793a` (see `result-EPICC-01-03-async-reprojection-tests.md`).
 
 RESULT: PASS
+
+## T4 — engine async re-projection (S1, S3) — BLOCKED
+
+**File changed (present in working tree, applied per spec, byte-for-byte):**
+`src/override-engine.js` — `InMemoryFakeStore.eventsFor`/`runTransaction` → `async` (S3);
+`OverrideEngine.recordOverride`/`recordIdentityMerge`/`recordIdentitySplit`/`confirm`/
+`retract` → `async`, each `await`ing `store.runTransaction(async () => { ...await
+store.eventsFor(oid)... })` (S1). `_transition` left sync (pure, no store I/O).
+`effectiveValue` made `async` for internal consistency (untested, no behavioural change).
+No pure decision-logic function touched — INV-B intact.
+
+**Command run:**
+```
+node --test src/__tests__/*.test.js
+```
+
+**Output (verbatim, FAIL):**
+```
+✔ the three enforced tools are registered and dispatchable (0.22487ms)
+ℹ Error: Test "record_override rejects an agent-supplied override_id" at src/__tests__/enforced-tools.test.js:43:1 generated asynchronous activity after the test ended. This activity created the error "Error: agent must not supply override_id; the tool computes it" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+ℹ Error: Test "identity.split rejects an agent-supplied new id (reject-before-mint)" at src/__tests__/enforced-tools.test.js:62:1 generated asynchronous activity after the test ended. This activity created the error "Error: agent must not supply a split-product entity id; the engine mints it" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+✔ (a) db.collection is called with exactly crm_overrides and no other collection (1.504542ms)
+✔ (b) eventsFor issues txn.get on a where(override_id,==,...) query (0.785609ms)
+✔ (c) append flushes as txn.set at docId `${override_id}#${seq}` (1.199883ms)
+✔ (d) a status mutation flushes as txn.update(ref,{status}) -- status key only (0.621361ms)
+✔ (e) persist-across-restart: a second store instance sees the first instance's events (0.360384ms)
+✔ (f) INV-C: txn.delete is never invoked; update payloads never carry a content field (0.504303ms)
+[INTEGRITY] Tool description hash verified OK
+✔ KNOWN_GOOD_TOOL_HASH is a 64-char hex SHA256 (0.918086ms)
+✔ inventory is the 11-tool set (8 base + 3 enforced), delete_document absent (0.336689ms)
+✔ regenerated hash matches the live inventory (GREEN) (10.346161ms)
+✔ the stale 8-tool hash would NOT verify the new inventory (RED is real) (0.262471ms)
+✔ tampering with any tool description aborts startup (0.528007ms)
+[TENANT] Tenant binding verified OK
+[TENANT] Tenant binding verified OK
+✔ refuses to bind the ZAPPHIRE vault (forbidden control-plane project) (4.462923ms)
+✔ refuses a project that does not match the expected tenant (0.254096ms)
+✔ permits the expected tenant project (2.333422ms)
+✔ permits a non-forbidden project when no expected tenant is injected (0.241492ms)
+✔ fail-closed on a missing/blank project id (0.283089ms)
+✔ vault is forbidden even if (mis)set as the expected tenant (0.313957ms)
+ℹ tests 80
+ℹ suites 7
+ℹ pass 76
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 677.358393
+
+✖ failing tests:
+
+test at src/__tests__/enforced-tools.test.js:43:1
+✖ record_override rejects an agent-supplied override_id (0.86156ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspaces/mcp-firestore-server/src/__tests__/enforced-tools.test.js:45:3)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/__tests__/enforced-tools.test.js:52:1
+✖ identity.split via handler mints the v06 anchor byte-identically (1.148066ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + undefined
+  - 'pending'
+
+      at TestContext.<anonymous> (file:///workspaces/mcp-firestore-server/src/__tests__/enforced-tools.test.js:57:10)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'pending',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/__tests__/enforced-tools.test.js:62:1
+✖ identity.split rejects an agent-supplied new id (reject-before-mint) (0.273992ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspaces/mcp-firestore-server/src/__tests__/enforced-tools.test.js:64:3)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/__tests__/enforced-tools.test.js:71:1
+✖ record (GATED) -> confirm -> retract lifecycle through injected store (0.52433ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + undefined
+  - 'pending'
+
+      at TestContext.<anonymous> (file:///workspaces/mcp-firestore-server/src/__tests__/enforced-tools.test.js:76:10)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'pending',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+```
+
+**Root cause (MEP-3 precise deviation):** `src/tools/record-override.js` /
+`confirm-override.js` / `retract-override.js` (T5/S5 scope, not yet touched) call
+`engine.<method>(args)` **without `await`**. Now that the engine methods are `async`
+(this task), the handler's `event` variable binds to an unresolved Promise, so
+`event.override_id`/`event.status` reads as `undefined`, and a rejection from
+`recordIdentitySplit`'s opaque-id guards is never awaited by the handler — it surfaces as
+an unhandled rejection instead of propagating through the handler's own `async function`,
+so `assert.rejects(...)` sees a normal resolution ("Missing expected rejection"). This is
+mechanically unavoidable for any spec-conformant async engine while the handlers remain
+un-awaited; confirmed the 4 failures are 100% localized to handler call sites (T5 scope,
+explicitly excluded from T4's ACTIONS list). The 74 baseline conformance/integrity/
+tenant-binding/allowlist tests and all 6 firestore-store tests still pass — no
+conformance-count drop below 74 (INV-B intact; every `v01`-`v12` vector still passes).
+
+**Ambiguity surfaced to Foreman/Director:** T4 and T5 are gated as independent,
+sequentially-pushed tasks, but T4's own literal gate ("full suite ALL PASS") is only
+satisfiable once T5's handler-await change is also present — the two tasks are not
+actually independently gateable as written. Per MEP-3 this is a STOP + report, not a
+silent adaptation (did not fold T5 into T4, did not narrow the gate command). Full
+detail + three named options for the Director in
+`epic-c-results/result-EPICC-01-04-BLOCKED.md` (pushed at `a09bde8`).
+
+**State of working tree at BLOCKED:** the S1/S3 `src/override-engine.js` change described
+above was left uncommitted in the working tree for Director inspection — no measured PASS
+existed to commit against, per genesis §3 ("advance only after the current task's PASS is
+pushed").
+
+RESULT: BLOCKED
