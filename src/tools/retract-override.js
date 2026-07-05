@@ -16,6 +16,6 @@ export const definition = {
 
 export async function handler(args, db, storeFactory = makeCrmOverridesStore) {
   const engine = new OverrideEngine(storeFactory(db), resolveTenantMintSalt());
-  const event = engine.retract(args.override_id);
+  const event = await engine.retract(args.override_id);
   return { collection: "crm_overrides", override_id: event.override_id, status: event.status };
 }

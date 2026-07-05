@@ -35,11 +35,11 @@ export async function handler(args, db, storeFactory = makeCrmOverridesStore) {
   const t = args.override_type;
   let event;
   if (t === "identity.merge") {
-    event = engine.recordIdentityMerge(args);
+    event = await engine.recordIdentityMerge(args);
   } else if (t === "identity.split") {
-    event = engine.recordIdentitySplit(args);
+    event = await engine.recordIdentitySplit(args);
   } else {
-    event = engine.recordOverride(args);
+    event = await engine.recordOverride(args);
   }
   return { collection: "crm_overrides", override_id: event.override_id,
            status: event.status, event_id: event.event_id };

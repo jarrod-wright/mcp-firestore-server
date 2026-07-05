@@ -114,9 +114,9 @@ export function validateOverride(o, allowedTypes) {
 
 export class InMemoryFakeStore {
   constructor() { this._events = []; }
-  eventsFor(overrideId) { return this._events.filter(e => e.override_id === overrideId); }
+  async eventsFor(overrideId) { return this._events.filter(e => e.override_id === overrideId); }
   append(event) { this._events.push(event); }
-  runTransaction(fn) { return fn(); }
+  async runTransaction(fn) { return await fn(); }
 }
 
 export class OverrideEngine {
@@ -125,8 +125,8 @@ export class OverrideEngine {
     this._salt = salt;
   }
 
-  recordOverride({ entity_id, override_type, field_path, value, stated_at, recorded_at,
-                   provenance, agent_supplied_override_id = null }) {
+  async recordOverride({ entity_id, override_type, field_path, value, stated_at, recorded_at,
+                          provenance, agent_supplied_override_id = null }) {
     // RB-2 opaque-id boundary -- checked FIRST, before any tier/taxonomy work.
     if (agent_supplied_override_id !== null && agent_supplied_override_id !== undefined)
       throw new WriteToolError("agent must not supply override_id; the tool computes it");
@@ -142,8 +142,8 @@ export class OverrideEngine {
     const [ok, errors] = validateOverride(override, ALL_TYPES);
     if (!ok) throw new WriteToolError(errors.join("; "));
     const store = this._store;
-    return store.runTransaction(() => {
-      const existing = store.eventsFor(oid);
+    return await store.runTransaction(async () => {
+      const existing = await store.eventsFor(oid);
       const currentActive = existing.find(e => e.status === "active") || null;
       if (tier === "AUTO" && currentActive !== null) {
         if (contentFingerprint(currentActive) === contentFingerprint(override)) return currentActive;
@@ -161,46 +161,46 @@ export class OverrideEngine {
     });
   }
 
-  recordIdentityMerge({ canonical_entity_id, merged_entity_ids, stated_at, recorded_at, provenance }) {
+  async recordIdentityMerge({ canonical_entity_id, merged_entity_ids, stated_at, recorded_at, provenance }) {
     if (typeof canonical_entity_id !== "string" || canonical_entity_id === "")
       throw new WriteToolError("canonical_entity_id must be a non-empty opaque string");
     if (!Array.isArray(merged_entity_ids) || merged_entity_ids.length === 0
         || !merged_entity_ids.every(x => typeof x === "string" && x))
       throw new WriteToolError("merged_entity_ids must be a non-empty list of opaque id strings");
-    return this.recordOverride({
+    return await this.recordOverride({
       entity_id: canonical_entity_id, override_type: "identity.merge", field_path: null,
       value: { canonical_entity_id, merged_entity_ids: [...merged_entity_ids] },
       stated_at, recorded_at, provenance,
     });
   }
 
-  recordIdentitySplit({ source_entity_id, partition_rule, stated_at, recorded_at, provenance,
-                        agent_supplied_new_id = null }) {
+  async recordIdentitySplit({ source_entity_id, partition_rule, stated_at, recorded_at, provenance,
+                               agent_supplied_new_id = null }) {
     // reject-before-mint ordering (VUL-B5 / v07): the rejection precedes any mint work.
     if (agent_supplied_new_id !== null && agent_supplied_new_id !== undefined)
       throw new WriteToolError("agent must not supply a split-product entity id; the engine mints it");
     const minted = mintEntityId(source_entity_id, partition_rule, this._salt);
-    return this.recordOverride({
+    return await this.recordOverride({
       entity_id: source_entity_id, override_type: "identity.split", field_path: null,
       value: { source_entity_id, partition_rule, minted_entity_id: minted },
       stated_at, recorded_at, provenance,
     });
   }
 
-  confirm(overrideId) {
+  async confirm(overrideId) {
     const store = this._store;
-    return store.runTransaction(() => {
-      const pend = store.eventsFor(overrideId).find(e => e.status === "pending") || null;
+    return await store.runTransaction(async () => {
+      const pend = (await store.eventsFor(overrideId)).find(e => e.status === "pending") || null;
       if (pend === null) throw new WriteToolError(`no pending override to confirm for ${overrideId}`);
       this._transition(pend, "active");
       return pend;
     });
   }
 
-  retract(overrideId) {
+  async retract(overrideId) {
     const store = this._store;
-    return store.runTransaction(() => {
-      const events = store.eventsFor(overrideId);
+    return await store.runTransaction(async () => {
+      const events = await store.eventsFor(overrideId);
       const ev = events.find(e => e.status === "active") || events.find(e => e.status === "pending") || null;
       if (ev === null) throw new WriteToolError(`nothing to retract for ${overrideId}`);
       this._transition(ev, "retracted");
@@ -215,8 +215,8 @@ export class OverrideEngine {
     event.status = newStatus;
   }
 
-  effectiveValue(overrideId) {
-    const act = this._store.eventsFor(overrideId).find(e => e.status === "active") || null;
+  async effectiveValue(overrideId) {
+    const act = (await this._store.eventsFor(overrideId)).find(e => e.status === "active") || null;
     return act !== null ? act.value : null;
   }
 
