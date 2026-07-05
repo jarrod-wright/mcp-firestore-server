@@ -601,3 +601,50 @@ confirming it is a real anchored check and not vacuously true.
 Committed/pushed as `919846d` (see `result-EPICC-01-06-harden.md`).
 
 RESULT: PASS
+
+## T7 — result roll-up + tag readiness
+
+Rolled up T1-T6 (T4/T5 merged into T4′ per `AMEND-01`) against the job spec/genesis
+Definition of Done: full suite 82/82, `npm audit` 0 crit/0 high, T6 parity + append-only
+gates PASS, INV-A/B/C/D all confirmed intact, clean-env/RB-1 respected (FakeFirestore
+double only, no live creds sought), no secrets committed, no git tags created by the
+Builder. Full detail in `epic-c-results/result-EPICC-01-07-rollup-handback.md`.
+
+**Final measured full-suite run (`node --test src/__tests__/*.test.js`):**
+```
+ℹ tests 82
+ℹ suites 7
+ℹ pass 82
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 920.469697
+```
+
+Committed/pushed as `f143633` (see `result-EPICC-01-07-rollup-handback.md`).
+
+RESULT: PASS
+
+## HANDBACK
+
+- **Final commit SHA:** this HANDBACK section's own commit, immediately following
+  `f143633d9d9bbf6fce5af813926c589b42834fa0` (T7 roll-up) on branch
+  `epic-b-enforced-overrides` — see the Builder's closing chat message for the exact SHA
+  (recorded there since this append-only file cannot self-reference its own future commit
+  hash).
+- **Full final `node --test` count line:**
+```
+ℹ tests 82
+ℹ suites 7
+ℹ pass 82
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 920.469697
+```
+- **READY FOR Director re-tag v2.2.0-zapphire1 at the final commit SHA above** (this
+  session-record's own closing commit). T1-T7 all PASS (T4/T5 merged into T4′ per
+  `AMEND-01`, resolving the session-1 BLOCKED at `a09bde8`). INV-A/B/C/D intact. No git
+  tag created by the Builder — that is the Director's step.
