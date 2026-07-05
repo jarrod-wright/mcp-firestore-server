@@ -498,3 +498,48 @@ edit is restored in the working tree, unchanged, ready to be completed under T4�
 sync (T3 committed state) ✓. Matches Step 1's expectation exactly.
 
 RESULT: PASS
+
+## T4′ (merged T4+T5) — engine async re-projection + handler awaits
+
+**Amendment read:** `builder-inputs/epic-c/JOB-ORDER-task-EPICC-01-AMEND-01.md` — merges
+T4 (S1+S3) and T5 (S5) into one atomically-gated task, per Director-ratified Option 1.
+
+**Change:**
+1. S1+S3 (engine) — kept the prior session's uncommitted `src/override-engine.js` change
+   unchanged (restored from stash this session): `InMemoryFakeStore.eventsFor`/
+   `runTransaction` -> async; `OverrideEngine.recordOverride`/`recordIdentityMerge`/
+   `recordIdentitySplit`/`confirm`/`retract` -> async with `await store.runTransaction(...)`.
+2. S5 (handlers, new) — `src/tools/record-override.js`, `confirm-override.js`,
+   `retract-override.js`: every `event = engine.<method>(args)` -> `event = await
+   engine.<method>(args)`. `server.js` unchanged (already awaits handlers).
+
+**Command run:**
+```
+node --test src/__tests__/*.test.js
+```
+
+**Output (summary lines):**
+```
+ℹ tests 80
+ℹ suites 7
+ℹ pass 80
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 660.585648
+```
+
+All 4 previously-BLOCKED tests now pass:
+```
+✔ record_override rejects an agent-supplied override_id
+✔ identity.split via handler mints the v06 anchor byte-identically
+✔ identity.split rejects an agent-supplied new id (reject-before-mint)
+✔ record (GATED) -> confirm -> retract lifecycle through injected store
+```
+Conformance vectors v01-v12 all pass (INV-B intact). No new failure outside the 4 known
+handler tests — no regression.
+
+Committed/pushed as `a91339c` (see `result-EPICC-01-04b-GREEN.md`).
+
+RESULT: PASS
