@@ -402,3 +402,38 @@ existed to commit against, per genesis §3 ("advance only after the current task
 pushed").
 
 RESULT: BLOCKED
+
+## HANDBACK
+
+- **Final commit SHA (this record's own commit, prior to this HANDBACK append):** `633d4365287f0ebb62845038e2d1816c0fbdf49e`
+- **Full final `node --test` count line (last full-suite run, T4, `git status`-uncommitted engine.js applied):**
+```
+ℹ tests 80
+ℹ suites 7
+ℹ pass 76
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 677.358393
+```
+- **Status:** BLOCKED — not ready for Director re-tag.
+
+**Exact BLOCKED reason:** T4 (engine async re-projection, S1/S3) was implemented
+byte-for-byte per the job spec's design, but its own literal GATE
+(`node --test src/__tests__/*.test.js` → full suite ALL PASS) is unreachable in isolation:
+76/80 pass, 4 fail, all four in `enforced-tools.test.js`, all caused by
+`src/tools/{record,confirm,retract}-override.js` still calling the now-async
+`OverrideEngine` methods without `await` — that is explicitly T5/S5 scope, not yet
+applied. This is a task-sequencing defect in the job spec itself (T4 and T5 are gated as
+independent, sequentially-pushed steps, yet are mechanically inseparable — no
+spec-conformant T4-only implementation can satisfy T4's own gate). Per
+BUILDER-OPERATING-PRINCIPLES MEP-3 this is a STOP + report, not a silent adaptation; per
+genesis §4 a gate needing a decision the Builder wasn't given is an architectural call for
+the Foreman/Director, not the Builder. Full detail, reproduction, and three named
+resolution options are in `epic-c-results/result-EPICC-01-04-BLOCKED.md` (pushed at
+`a09bde8`) and in the `## T4` section above.
+
+**Not** `READY FOR Director re-tag v2.2.0-zapphire1`. Awaiting Foreman/Director
+re-dispatch with a resolved T4/T5 gate boundary (see the three options in the T4 section)
+before the Builder continues to T5.
