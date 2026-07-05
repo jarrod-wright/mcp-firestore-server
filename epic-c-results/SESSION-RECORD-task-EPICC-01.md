@@ -225,3 +225,35 @@ node --test src/__tests__/firestore-store.test.js
 Committed/pushed as `44cfd21` (see `result-EPICC-01-02-firestore-store-green.md`).
 
 RESULT: PASS
+
+## T3 — conformance/enforced tests → async (S6), engine still sync
+
+**Files changed:** `src/__tests__/conformance.test.js` (every test body driving
+`recordOverride`/`recordIdentityMerge`/`recordIdentitySplit`/`confirm`/`retract`/
+`eventsFor` → `async` + `await`; `v07`/`v12` `assert.throws` → `await assert.rejects(async
+() => {...})`; `v08` and the blob-pin test unchanged, no store/engine call to await),
+`src/__tests__/enforced-tools.test.js` (`shared.eventsFor(...)[0]` → `const [ev] = await
+shared.eventsFor(...)`). No production code changed. Vector inputs/expectations and
+assertion predicates byte-identical — only async/await threading added.
+
+**Command run:**
+```
+node --test src/__tests__/*.test.js
+```
+
+**Output (summary lines):**
+```
+ℹ tests 80
+ℹ suites 7
+ℹ pass 80
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 590.271267
+```
+80/80 — "await-of-sync is harmless" confirmed; no conformance-count drop from 74.
+
+Committed/pushed as `269793a` (see `result-EPICC-01-03-async-reprojection-tests.md`).
+
+RESULT: PASS
