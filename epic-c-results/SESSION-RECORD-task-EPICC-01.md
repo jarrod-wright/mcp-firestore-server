@@ -543,3 +543,61 @@ handler tests — no regression.
 Committed/pushed as `a91339c` (see `result-EPICC-01-04b-GREEN.md`).
 
 RESULT: PASS
+
+## T6 — HARDEN: decision-logic parity + append-only + audit
+
+**(i) Parity:** no new test authored — `src/__tests__/conformance.test.js` (blob-pinned to
+`d89f54c9280fce1edddb73f8835f5e0664e1bf32`, replaying `v01`-`v12` against the engine,
+byte-identical assertions on `override_id`/`status`/`schema_fields`/`value`/
+`minted_entity_id`) already is this proof; authoring a duplicate would violate RT-GATE-2.
+INV-B confirmed intact by diff review — only async/await threading changed in T4′, no
+pure decision-logic function touched.
+
+**(ii) Append-only structural gate — NEW `src/__tests__/append-only-gate.test.js`
+(RT-GATE-1: comments stripped first, anchored on the `.delete(`/`.update(` call
+construct):**
+
+**Command run:**
+```
+node --test src/__tests__/append-only-gate.test.js
+```
+**Output (verbatim, PASS on real source):**
+```
+✔ T6(ii): no .delete( call construct in crm-overrides-store.js (comments stripped) (1.245198ms)
+✔ T6(ii): every .update( call payload carries the status key only (comments stripped) (0.987666ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 77.54177
+```
+Anchoring proof (ad hoc, not committed): injecting a real `.delete(ref)` call into a copy
+of the source flips the delete-check to `true`; injecting a `value` key into the update
+payload changes the extracted keys to `["status","value"]` — both would fail the gate,
+confirming it is a real anchored check and not vacuously true.
+
+**(iii) `npm audit --package-lock-only --json` → `metadata.vulnerabilities`:**
+```json
+{ "info": 0, "low": 0, "moderate": 8, "high": 0, "critical": 0, "total": 8 }
+```
+0 critical / 0 high — unchanged from bring-up.
+
+**Full-suite regression check (`node --test src/__tests__/*.test.js`, summary lines):**
+```
+ℹ tests 82
+ℹ suites 7
+ℹ pass 82
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 886.122089
+```
+82 = 80 (T4′) + 2 new structural tests. No regression.
+
+Committed/pushed as `919846d` (see `result-EPICC-01-06-harden.md`).
+
+RESULT: PASS
