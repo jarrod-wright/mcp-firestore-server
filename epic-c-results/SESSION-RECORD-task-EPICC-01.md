@@ -437,3 +437,64 @@ resolution options are in `epic-c-results/result-EPICC-01-04-BLOCKED.md` (pushed
 **Not** `READY FOR Director re-tag v2.2.0-zapphire1`. Awaiting Foreman/Director
 re-dispatch with a resolved T4/T5 gate boundary (see the three options in the T4 section)
 before the Builder continues to T5.
+
+## Resume — bring-up (session 2, post-AMEND-01)
+
+Resuming the job. Director ratified Option 1 (merge T4+T5 into T4′) and pushed
+`builder-inputs/epic-c/JOB-ORDER-task-EPICC-01-AMEND-01.md`.
+
+**Commands run:**
+```
+cd /workspaces/mcp-firestore-server
+git checkout epic-b-enforced-overrides
+git pull --ff-only
+git rev-parse HEAD
+git describe --tags
+```
+
+**Output — `git pull --ff-only`:** fast-forwarded `23b287b..03639d7`, adding
+`builder-inputs/epic-c/JOB-ORDER-task-EPICC-01-AMEND-01.md` (27 insertions).
+
+**Output — `git rev-parse HEAD`:**
+```
+03639d74d6db38a59a5d57381287e345aadf3a99
+```
+
+**Output — `git describe --tags`:**
+```
+v2.1.1-zapphire1-12-g03639d7
+```
+(12 commits past the tag — expected, since T1/T2/T3/T4-BLOCKED + session-record commits
+landed since bring-up. Confirmed the tag is still an ancestor of HEAD:
+`git merge-base --is-ancestor v2.1.1-zapphire1 HEAD` → true, branch base intact.)
+
+**Verifying the true committed baseline (engine still sync):** the working tree carried
+an uncommitted T4 engine-async edit from the prior session (per AMEND-01 §"Resume point",
+expected and to be kept). To measure the *committed* T3 baseline exactly as Step 1
+requires, that edit was temporarily stashed (`git stash push --keep-index --
+src/override-engine.js`), the suite run, then the stash restored.
+
+**Command run (on committed T3 HEAD, engine sync):**
+```
+node --test src/__tests__/*.test.js
+```
+
+**Output (summary lines):**
+```
+ℹ tests 80
+ℹ suites 7
+ℹ pass 80
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 627.725701
+```
+
+Stash popped back cleanly afterward (`git stash pop`) — the uncommitted T4 engine-async
+edit is restored in the working tree, unchanged, ready to be completed under T4′.
+
+**Gate check:** branch HEAD descends from `v2.1.1-zapphire1` ✓. Suite = 80/80 with engine
+sync (T3 committed state) ✓. Matches Step 1's expectation exactly.
+
+RESULT: PASS
