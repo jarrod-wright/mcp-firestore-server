@@ -71,3 +71,111 @@ vulnerabilities of any severity), report body: `8 moderate severity vulnerabilit
 HEAD, NOT `07fc7673`) ✓. Baseline 74/74 ✓. 0 critical / 0 high ✓.
 
 RESULT: PASS
+
+## T1 — RED: Firestore-store behaviour test
+
+**Files added:** `src/__tests__/helpers/fake-firestore.js` (S4 `FakeFirestore` double),
+`src/__tests__/firestore-store.test.js` (6 tests a-f against the still-old sync in-memory
+`CrmOverridesStore`, instrumented via a spy db).
+
+**Command run:**
+```
+node --test src/__tests__/firestore-store.test.js
+```
+
+**Output (verbatim, RED):**
+```
+✔ (a) db.collection is called with exactly crm_overrides and no other collection (1.518258ms)
+✖ (b) eventsFor issues txn.get on a where(override_id,==,...) query (0.993948ms)
+✖ (c) append flushes as txn.set at docId `${override_id}#${seq}` (1.244556ms)
+✖ (d) a status mutation flushes as txn.update(ref,{status}) -- status key only (0.437979ms)
+✖ (e) persist-across-restart: a second store instance sees the first instance's events (0.344124ms)
+✔ (f) INV-C: txn.delete is never invoked; update payloads never carry a content field (0.32632ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 2
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 85.261272
+
+✖ failing tests:
+
+test at src/__tests__/firestore-store.test.js:70:1
+✖ (b) eventsFor issues txn.get on a where(override_id,==,...) query (0.993948ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at TestContext.<anonymous> (file:///workspaces/mcp-firestore-server/src/__tests__/firestore-store.test.js:76:10)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/__tests__/firestore-store.test.js:84:1
+✖ (c) append flushes as txn.set at docId `${override_id}#${seq}` (1.244556ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at TestContext.<anonymous> (file:///workspaces/mcp-firestore-server/src/__tests__/firestore-store.test.js:95:10)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/__tests__/firestore-store.test.js:100:1
+✖ (d) a status mutation flushes as txn.update(ref,{status}) -- status key only (0.437979ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at TestContext.<anonymous> (file:///workspaces/mcp-firestore-server/src/__tests__/firestore-store.test.js:115:10)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/__tests__/firestore-store.test.js:121:1
+✖ (e) persist-across-restart: a second store instance sees the first instance's events (0.344124ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at TestContext.<anonymous> (file:///workspaces/mcp-firestore-server/src/__tests__/firestore-store.test.js:134:10)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+```
+
+Each failure is the intended-reason failure (RT-GATE-1/MEP-3): the spy's `calls.gets` /
+`calls.sets` / `calls.updates` counters are zero because the still-current sync in-memory
+`CrmOverridesStore` never touches `db.collection(...).firestore.runTransaction` or any
+`txn.*` method. Not an import/scaffold error.
+
+Committed/pushed as `c4bd0cf` (see `result-EPICC-01-01-firestore-store-red.md`).
+
+RESULT: PASS
