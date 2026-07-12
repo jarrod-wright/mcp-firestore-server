@@ -202,3 +202,34 @@ $ node --test tests/merge/test_resolve_timestamp.js
 ```
 
 **GATE G3-RED (binary):** test FAILS as `AssertionError` (tool genuinely absent from registry), not an import/collection error. **MET.**
+
+**GREEN — action:** implemented `src/tools/resolve-timestamp.js` (stdlib `Intl` only, zero external deps) returning `{ timestamp, timezone }` where `timestamp` is an ISO 8601 string with the correct `America/New_York` UTC offset (DST-aware via `Intl.DateTimeFormat` `longOffset`), and added the single registration entry to `src/tools/index.js` (one import + one array push).
+
+**Re-run (`node --test tests/merge/test_resolve_timestamp.js`):**
+```
+✔ resolve_timestamp tool exists and returns ISO time in server tz (T-M4) (462.661385ms)
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+```
+
+**Sample output:**
+```
+$ node -e "import('./src/tools/resolve-timestamp.js').then(m => m.handler().then(r => console.log(JSON.stringify(r))))"
+{"timestamp":"2026-07-12T00:17:42-04:00","timezone":"America/New_York"}
+```
+
+**`index.js` diff hygiene (RT-GATE-1 — anchored on the actual registration construct, comment-stripped, not a bare substring grep):**
+```
+$ diff <(git show f2ba66e7:src/tools/index.js | grep -v '^\s*//' | sed '/^\s*$/d') \
+       <(grep -v '^\s*//' src/tools/index.js | sed '/^\s*$/d')
+11a12
+> import * as resolveTimestamp from "./resolve-timestamp.js";
+23a25
+>   resolveTimestamp,
+```
+Comment-stripped diff = exactly the one import line + one array entry for `resolve_timestamp`. No other `index.js`/`src/tools/index.js` change.
+
+**GATE G3 (binary):** `resolve_timestamp` returns correct configured-tz (`America/New_York`) time; tool count now **12** (11 base + 1 new). **MET.**
+
+**RESULT: PASS**

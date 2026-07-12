@@ -16,6 +16,8 @@ import * as batchGet from "./batch-get.js";
 import * as recordOverride from "./record-override.js";
 import * as confirmOverride from "./confirm-override.js";
 import * as retractOverride from "./retract-override.js";
+// task-MCP-MERGE -- resolve_timestamp: authoritative current time in server tz (L-21/L-122).
+import * as resolveTimestamp from "./resolve-timestamp.js";
 
 const tools = [
   queryCollection,
@@ -32,6 +34,7 @@ const tools = [
   recordOverride,
   confirmOverride,
   retractOverride,
+  resolveTimestamp,
 ];
 
 /**
