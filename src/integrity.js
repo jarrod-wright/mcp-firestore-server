@@ -45,11 +45,13 @@ import { createHash } from 'crypto';
  * Known-good SHA256 of sorted tool (name + description) concatenation.
  * Derived from source at this commit. Replaces on any tool description change.
  *
- * Commit: task-MCP-MERGE (BLD-652) -- resealed for the 12-tool merged inventory.
- * Prior value (11-tool override-engine base, f2ba66e7): aa1f78f7...59e041.
+ * Commit: task-MCP-MERGE (BLD-652) -- 12-tool merged inventory. Resealed again at
+ * RS-1 for the resolve_timestamp description change (env-driven tz via HERMES_TIMEZONE,
+ * default America/New_York). Prior values: 11-tool base f2ba66e7 = aa1f78f7...59e041;
+ * 12-tool pre-tz-fix = 46e43ed8...cd822.
  */
 export const KNOWN_GOOD_TOOL_HASH =
-  '46e43ed8d4e69b845562ef42f0dbcbac7edf4cbf9edfd61ca3c4de0b729cd822';
+  'fa49019c894eb2c65325d380988092f6f28734dc36f7b7eda2caa3e656367cd4';
 
 /**
  * Compute SHA256 of sorted tool (name + description) concatenation.
