@@ -233,3 +233,51 @@ Comment-stripped diff = exactly the one import line + one array entry for `resol
 **GATE G3 (binary):** `resolve_timestamp` returns correct configured-tz (`America/New_York`) time; tool count now **12** (11 base + 1 new). **MET.**
 
 **RESULT: PASS**
+
+---
+
+## T-M5 — integrity reseal (probe-with-STOP for the G2-f residual)
+
+**Probe:**
+```
+$ test -f scripts/regen-integrity-hash.mjs && echo PRESENT || echo ABSENT
+PRESENT
+```
+Script present — no STOP.
+
+**Reseal — run the generator:**
+```
+$ node scripts/regen-integrity-hash.mjs
+tool count: 12
+inventory : batch_get, confirm_override, count_documents, create_document, get_document, list_collections, query_collection, query_with_where, record_override, resolve_timestamp, retract_override, update_document
+OLD hash  : aa1f78f77bdb6ab1637b9070aa1725f16567881ca232827e73b7490efe59e041
+46e43ed8d4e69b845562ef42f0dbcbac7edf4cbf9edfd61ca3c4de0b729cd822
+```
+`KNOWN_GOOD_TOOL_HASH` in `src/integrity.js` was replaced with the script-computed value `46e43ed8d4e69b845562ef42f0dbcbac7edf4cbf9edfd61ca3c4de0b729cd822` — placing the generator's own printed output into the source constant, never hand-computed (same mechanism as the prior `aa1f78f7 -> ...` / `a49a5d40 -> 84ba5a19` reseal commits already in this repo's history).
+
+**Re-run of the regen script post-edit (idempotence check — printed value must equal the new constant):**
+```
+OLD hash  : 46e43ed8d4e69b845562ef42f0dbcbac7edf4cbf9edfd61ca3c4de0b729cd822
+46e43ed8d4e69b845562ef42f0dbcbac7edf4cbf9edfd61ca3c4de0b729cd822
+```
+Matches — resealed value is stable/reproducible from source.
+
+**Fallout — one pre-existing base test hardcoded the prior tool count.** `src/__tests__/integrity.test.js` had `"inventory is the 11-tool set..."` asserting `names.length === 11`. This is a base-suite test whose fixed expectation is a direct, in-recipe consequence of T-M4 (job-spec explicitly frames the reseal as required "on the tool-set change (11→12)"). Updated the assertion and title to 12 (`8 base + 3 enforced + resolve_timestamp`) and added `resolve_timestamp` to the presence check — mechanical count update only, no other test logic touched. Flagging this as an explicit, recipe-necessitated change rather than silently patching it.
+
+**Positive + negative control (`node --test src/__tests__/integrity.test.js`):**
+```
+[INTEGRITY] Tool description hash verified OK
+✔ KNOWN_GOOD_TOOL_HASH is a 64-char hex SHA256 (0.906089ms)
+✔ inventory is the 12-tool set (8 base + 3 enforced + resolve_timestamp), delete_document absent (0.379537ms)
+✔ regenerated hash matches the live inventory (GREEN) (8.496048ms)
+✔ the stale 8-tool hash would NOT verify the new inventory (RED is real) (0.233105ms)
+✔ tampering with any tool description aborts startup (0.81012ms)
+ℹ tests 5
+ℹ pass 5
+ℹ fail 0
+```
+"tampering with any tool description aborts startup" is the negative control: a corrupted description recomputes to a mismatching hash and `verifyToolDescriptionHash` throws `[INTEGRITY] ... hash mismatch ...` — the identical code path a corrupted `KNOWN_GOOD_TOOL_HASH` constant would hit. A full `node index.js` end-to-end run was not used for this control: it requires live GCP project credentials to get past project-ID detection before reaching the integrity check, which is out of scope (no host/live-credential contact per the always-hold invariants) and unnecessary — `verifyToolDescriptionHash` is exercised directly, credential-free, and deterministically by the unit tests above.
+
+**GATE G4 (binary):** server-side fail-closed integrity check passes with the resealed hash for the 12-tool set; a corrupted check (tampered description / mismatching hash) fails closed with the mismatch error. **MET.**
+
+**RESULT: PASS**
