@@ -128,3 +128,47 @@ src/tools/batch-get.js
 Both failures are the `KNOWN_GOOD_TOOL_HASH` integrity checks (UT9) — expected: the overlay changed 3 tool descriptions (`query_collection`/`query_with_where`/`get_document`), so the base-pinned hash `aa1f78f7` is now stale by design. This is T-M5's scope (reseal), not a T-M2/T-M3 concern. No override-tool test is among the 2 failures — all `record_override`/`confirm_override`/`retract_override`, allowlist, tenant-binding, and conformance-vector suites remain green at this point (verified individually in T-M3 next).
 
 **RESULT: PASS**
+
+---
+
+## T-M3 — regression guard: override suite preserved (load-bearing, L-141/L-145)
+
+**Action:** ran the override/oracle/vectors/allowlist/tenant suites explicitly against the overlaid tree (isolating them from the still-stale integrity-hash failure, which is T-M5's concern):
+```
+$ node --test src/__tests__/conformance.test.js src/__tests__/enforced-tools.test.js \
+    src/__tests__/allowlist-invariant5.test.js src/__tests__/allowlist.test.js \
+    src/__tests__/append-only-gate.test.js src/__tests__/tenant-binding.test.js \
+    src/__tests__/firestore-store.test.js
+```
+
+**Evidence (verbatim tail):**
+```
+ℹ tests 77
+ℹ suites 7
+ℹ pass 76
+ℹ fail 1
+ℹ skipped 0
+
+✖ failing tests:
+✖ UT9: computed hash from source definitions matches known-good constant
+```
+The single failure is the same pre-flagged `KNOWN_GOOD_TOOL_HASH` staleness from T-M2 (T-M5's scope). Every override-specific test is green, unchanged from T-M0's baseline: `vectors file matches the pinned oracle blob (no silent contract drift)`, `v01`–`v12` (oracle `e997e8f9` vectors, all pass), `record_override`/`confirm_override`/`retract_override` registration + dispatch, append-only-gate (a)–(f), `generic create_document CANNOT write crm_overrides`, `generic update_document CANNOT write crm_records`, `hard exclusion resists case + subpath smuggling for crm_overrides`.
+
+**Conformance vectors blob check:**
+```
+$ git hash-object conformance/conformance_vectors.json
+d89f54c9280fce1edddb73f8835f5e0664e1bf32
+```
+Unchanged, still matches pinned `d89f54c9` (file was not touched by the overlay — not one of the 7 recipe files).
+
+**`HARD_EXCLUDED_FROM_WRITES` intact:**
+```
+$ grep -n "HARD_EXCLUDED_FROM_WRITES" src/allowlist.js
+27:const HARD_EXCLUDED_FROM_WRITES = ['knowledge', 'okg', 'crm_overrides', 'crm_records'];
+201:    if (HARD_EXCLUDED_FROM_WRITES.includes(segment)) return BLOCKED;
+```
+Still contains `crm_overrides` + `crm_records`, unchanged from `f2ba66e7` (this file was not one of the 7 overlaid files).
+
+**GATE G2 (binary):** override tools present, vectors GREEN, unchanged from T-M0; `HARD_EXCLUDED_FROM_WRITES` intact. No override regression. **MET.**
+
+**RESULT: PASS**
