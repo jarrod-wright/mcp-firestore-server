@@ -281,3 +281,35 @@ Matches — resealed value is stable/reproducible from source.
 **GATE G4 (binary):** server-side fail-closed integrity check passes with the resealed hash for the 12-tool set; a corrupted check (tampered description / mismatching hash) fails closed with the mismatch error. **MET.**
 
 **RESULT: PASS**
+
+---
+
+## T-M6 — full green + tarball
+
+**Second stale-inventory fallout found by the full-suite run.** `npm test` (full base script) initially still showed 1 failure post-reseal: `src/__tests__/allowlist.test.js`'s own `UT9` test (`tool description integrity (UT9)` describe block) hand-builds an independent `rawDefs` array from direct tool-module imports — a second, separate enumeration of the tool inventory from `src/tools/index.js`'s own `tools` array — and it wasn't updated for `resolve_timestamp`, so it still computed the 11-tool hash. Same class of fallout as T-M5's `integrity.test.js` fix: added the `resolveTimestamp` import and its `.definition` to that file's `rawDefs` array. Mechanical inventory-sync only, no other test logic touched.
+
+**Full base suite (`npm test`) after both stale-inventory fixes:**
+```
+ℹ tests 82
+ℹ suites 7
+ℹ pass 82
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 740.081497
+```
+
+**New merge tests (`node --test tests/merge/*.js`):**
+```
+✔ heavy-collection query_collection() default projection (T-M1/T-M2) (2.942606ms)
+✔ resolve_timestamp tool exists and returns ISO time in server tz (T-M4) (20.413623ms)
+ℹ tests 2
+ℹ pass 2
+ℹ fail 0
+ℹ skipped 0
+```
+
+**Combined: 84/84 tests green, 0 fail, 0 skipped** (base 82 + 2 new merge tests, override vectors `d89f54c9`/oracle `e997e8f9` included in the base 82 and reconfirmed individually in T-M3).
+
+**GATE G5 (binary):** entire suite GREEN, zero skips. **MET.**

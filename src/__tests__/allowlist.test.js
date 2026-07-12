@@ -52,6 +52,7 @@ import * as batchGet from '../tools/batch-get.js';
 import * as recordOverride from '../tools/record-override.js';
 import * as confirmOverride from '../tools/confirm-override.js';
 import * as retractOverride from '../tools/retract-override.js';
+import * as resolveTimestamp from '../tools/resolve-timestamp.js';
 
 /**
  * Helper: set env vars for the duration of fn(), then restore.
@@ -405,6 +406,7 @@ describe('tool description integrity (UT9)', () => {
       recordOverride.definition,
       confirmOverride.definition,
       retractOverride.definition,
+      resolveTimestamp.definition,
     ];
 
     const computed = computeToolDescriptionHash(rawDefs);
