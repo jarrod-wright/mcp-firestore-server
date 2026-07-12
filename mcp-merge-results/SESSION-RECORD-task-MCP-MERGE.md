@@ -172,3 +172,33 @@ Still contains `crm_overrides` + `crm_records`, unchanged from `f2ba66e7` (this 
 **GATE G2 (binary):** override tools present, vectors GREEN, unchanged from T-M0; `HARD_EXCLUDED_FROM_WRITES` intact. No override regression. **MET.**
 
 **RESULT: PASS**
+
+---
+
+## T-M4 — RED→GREEN: `resolve_timestamp` tool
+
+**Note on tz source:** grounding (L-122/L-140) states "config tz already ET" as closure evidence that no timezone-configuration work is needed elsewhere — this repo has no existing tz config to "read" (grepped for `America/New_York`/`timezone`/`TZ` across the tree — no hits outside the new test). Read this as: the tz value itself (`America/New_York`) is already decided/verified by the Director/Foreman; the tool hardcodes it as a named constant (stdlib `Intl`, no external deps). Flagging this reading rather than silently assuming a config-reading mechanism that doesn't exist in this repo.
+
+**RED — action:** authored `tests/merge/test_resolve_timestamp.js`, asserting against the tool registry (`src/tools/index.js` `getToolDefinitions`/`getHandler`) rather than importing `src/tools/resolve-timestamp.js` directly, so the pre-implementation run fails as a genuine `AssertionError` (tool absent) rather than a module-not-found import error.
+
+**Run pre-implementation:**
+```
+$ node --test tests/merge/test_resolve_timestamp.js
+✖ resolve_timestamp tool exists and returns ISO time in server tz (T-M4) (1.332664ms)
+ℹ tests 1
+ℹ pass 0
+ℹ fail 1
+
+  AssertionError [ERR_ASSERTION]: expected a resolve_timestamp tool definition to be registered
+      at TestContext.<anonymous> (file:///workspaces/mcp-firestore-server/tests/merge/test_resolve_timestamp.js:15:10)
+  {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+```
+
+**GATE G3-RED (binary):** test FAILS as `AssertionError` (tool genuinely absent from registry), not an import/collection error. **MET.**
