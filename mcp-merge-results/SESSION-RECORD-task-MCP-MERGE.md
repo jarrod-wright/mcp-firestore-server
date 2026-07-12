@@ -82,3 +82,49 @@ $ node --test tests/merge/test_projection_present.js
 **GATE G1-RED (binary):** test FAILS as `AssertionError` (`compiled_layers must be stripped...`, actual `true` vs expected `false`) — a genuine structural failure (projection absent on the override-only base), not an import/collection error. **MET.**
 
 **RESULT: PASS**
+
+---
+
+## T-M2 — GREEN: overlay projection stack
+
+**Action:** overlaid the 7 named files from `master` (job-spec §2.2), verbatim, via `git checkout master -- <path>`:
+```
+src/constants.js
+src/helpers/query.js
+src/helpers/schema.js
+src/tools/query-with-where.js
+src/tools/query-collection.js
+src/tools/get-document.js
+src/tools/batch-get.js
+```
+`git status --short` post-overlay shows 6 files modified; `src/tools/batch-get.js` produced zero diff (already byte-identical between `f2ba66e7` and `master`) — confirmed via direct diff, no-op overlay for that file. `index.js` and `src/tools/index.js` diff = empty (untouched), confirmed via `git diff --stat HEAD -- index.js src/tools/index.js`.
+
+**Re-run T-M1 test (`node --test tests/merge/test_projection_present.js`):**
+```
+✔ heavy-collection query_collection() default projection (T-M1/T-M2) (3.043824ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+```
+
+**GATE G1-GREEN (binary):** `test_projection_present.js` passes post-overlay: metadata-only default on `compilation_artifacts`, `_meta`+cursor present, byte-capped. **MET.**
+
+**Full base suite sanity run (`npm test`) post-overlay:**
+```
+ℹ tests 82
+ℹ suites 7
+ℹ pass 80
+ℹ fail 2
+ℹ skipped 0
+
+✖ failing tests:
+✖ UT9: computed hash from source definitions matches known-good constant
+✖ regenerated hash matches the live inventory (GREEN)
+```
+Both failures are the `KNOWN_GOOD_TOOL_HASH` integrity checks (UT9) — expected: the overlay changed 3 tool descriptions (`query_collection`/`query_with_where`/`get_document`), so the base-pinned hash `aa1f78f7` is now stale by design. This is T-M5's scope (reseal), not a T-M2/T-M3 concern. No override-tool test is among the 2 failures — all `record_override`/`confirm_override`/`retract_override`, allowlist, tenant-binding, and conformance-vector suites remain green at this point (verified individually in T-M3 next).
+
+**RESULT: PASS**
