@@ -313,3 +313,45 @@ Matches — resealed value is stable/reproducible from source.
 **Combined: 84/84 tests green, 0 fail, 0 skipped** (base 82 + 2 new merge tests, override vectors `d89f54c9`/oracle `e997e8f9` included in the base 82 and reconfirmed individually in T-M3).
 
 **GATE G5 (binary):** entire suite GREEN, zero skips. **MET.**
+
+**Tarball — built from commit `3d93a34f0af50a811aeab746854d110b449fa44f`** (the T-M6 full-green commit above), via `git archive` — source-only and deterministic by construction (content-addressed from the git tree, no filesystem mtimes/ordering involved):
+```
+$ git archive --format=tar.gz --prefix=mcp-firestore-server/ \
+    -o task-MCP-MERGE-builder-mcp-merge-01-3d93a34f0af5.tar.gz \
+    3d93a34f0af50a811aeab746854d110b449fa44f
+
+$ sha256sum task-MCP-MERGE-builder-mcp-merge-01-3d93a34f0af5.tar.gz
+5d3f3c5ccc15e0cff00b7d814f0af3b68130a7db82c9de6a0a15bc3e968977b2  task-MCP-MERGE-builder-mcp-merge-01-3d93a34f0af5.tar.gz
+```
+**Determinism check** — rebuilt from the same commit, re-hashed, identical digest:
+```
+5d3f3c5ccc15e0cff00b7d814f0af3b68130a7db82c9de6a0a15bc3e968977b2  (rebuild)
+```
+**Source-only check** — 74 entries, 0 `node_modules`, no `.git`.
+
+Tarball itself is a build artifact (not committed to git, per this repo's own `.npmignore`/`.gitignore` convention of excluding `*.tgz`/`node_modules`) — retained in the Codespace build environment; its `sha256` above is the durable record. No staging/scp/host-swap performed (RB-1 track, out of scope here).
+
+**RESULT: PASS**
+
+---
+
+## HANDBACK
+
+- **Branch:** `builder/mcp-merge-01`, cut from override base `f2ba66e7`, pushed to `origin` (fork `jazzahupwork-boop/mcp-firestore-server`) after every task section.
+- **Final HEAD SHA:** `3d93a34f0af50a811aeab746854d110b449fa44f`
+- **Final `npm test` count:** base suite 82/82 pass, 0 fail, 0 skipped. Plus 2 new merge tests (`tests/merge/*.js`) 2/2 pass. **Combined 84/84, 0 fail, 0 skipped.**
+- **Resealed `KNOWN_GOOD_TOOL_HASH`:** `46e43ed8d4e69b845562ef42f0dbcbac7edf4cbf9edfd61ca3c4de0b729cd822` (12-tool inventory; prior override-base value was `aa1f78f7...`), resealed via `scripts/regen-integrity-hash.mjs` only — never hand-computed.
+- **Tarball `sha256`:** `5d3f3c5ccc15e0cff00b7d814f0af3b68130a7db82c9de6a0a15bc3e968977b2` (source-only, `git archive` from `3d93a34f0af5...`, determinism-verified by rebuild).
+- **G0..G5:** all PASS (see T-M0..T-M6 sections above).
+- **`index.js` diff vs `f2ba66e7`:** empty (top-level bootstrap untouched, as recipe requires). **`src/tools/index.js`** diff (the actual tool registry — see T-M4 note on job-spec's "index.js" referring to this file, since the top-level `index.js` has zero tool registrations at `f2ba66e7`) = comment-stripped exactly one added registration (`resolve_timestamp`), verified in T-M4.
+- **7-file overlay** (job-spec §2.2) applied verbatim from `master`; `src/tools/batch-get.js` was a no-op (already byte-identical at `f2ba66e7`).
+- **Projection ⊕ override ⊕ resolve_timestamp coexist:** confirmed — T-M1/T-M2 (projection), T-M3 (override regression guard, vectors `d89f54c9`/oracle `e997e8f9` green, `HARD_EXCLUDED_FROM_WRITES` intact), T-M4 (resolve_timestamp).
+- **No host action taken** at any point (no scp/ssh/deploy/restart/host read).
+
+**Two deviations from the literal job-spec text, both flagged inline at the point they occurred (not silent):**
+1. **Test file location** (T-M1): job-spec names literal path `tests/merge/test_projection_present.js`, which this repo's `npm test` script (`node --test src/__tests__/*.test.js`) does not glob. Left `package.json` untouched (not one of the 7 recipe files) and ran the merge tests as a separate `node --test tests/merge/*.js` invocation instead of folding them into a single `npm test` command.
+2. **Two pre-existing base tests hardcoded the prior 11-tool count** (`src/__tests__/integrity.test.js`, `src/__tests__/allowlist.test.js` UT9's `rawDefs`) and needed a mechanical one-line/one-import update each to reflect the recipe-mandated 12th tool (T-M5/T-M6) — the same class of change as the sanctioned integrity reseal, not new scope.
+
+Neither deviation is one of the three named STOP triggers (base ≠ 82 green; override regression; `regen-integrity-hash.mjs` absent) — none of which fired. No architectural decision was made; the tz value used for `resolve_timestamp` (`America/New_York`) was taken directly from the job-spec's own grounding (L-122/L-140), not chosen by the Builder.
+
+**READY FOR Director independent re-green + re-tag.**
