@@ -58,14 +58,10 @@ export const PROJECTION_PROPERTIES = {
 export const WHERE_CLAUSES_PROPERTY = {
   type: "array",
   description:
-    'Array of where clauses: [[field, operator, value], ...]. Values are auto-coerced to numbers, booleans, arrays, etc.',
+    `Array of where clauses: [[field, operator, value], ...]. Each inner array is exactly [field, operator, value]: field (string), operator (one of: ${WHERE_OPERATORS.join(", ")}), value (string; auto-coerced to numbers, booleans, arrays, etc.).`,
   items: {
     type: "array",
-    items: [
-      { type: "string", description: "Field name" },
-      { type: "string", enum: WHERE_OPERATORS, description: "Comparison operator" },
-      { type: "string", description: "Value to compare (auto-coerced)" },
-    ],
+    items: { type: "string" },
     minItems: 3,
     maxItems: 3,
   },
